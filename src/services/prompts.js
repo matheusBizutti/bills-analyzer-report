@@ -63,10 +63,11 @@ A patient uploaded a hospital bill. Analyze the bill and identify realistic bill
 
 Your goal is to help the patient understand:
 - where they may be overpaying
-- what deserves review
+- which charges deserve the most attention
 - what actions they can take next
+- how much they may realistically save
 
-This analysis should feel practical, credible, specific, and helpful.
+This analysis should feel practical, credible, highly specific, and valuable enough to feel like a professional paid audit.
 
 IMPORTANT OUTPUT RULES
 - Return VALID JSON ONLY.
@@ -78,7 +79,8 @@ IMPORTANT OUTPUT RULES
 - If evidence is weak, use cautious wording like "possible", "may", "potential", or "worth reviewing" in natural language fields only.
 - Never present assumptions as confirmed billing errors.
 - Use patient-friendly language.
-- Avoid robotic, legalistic, or overly technical wording.
+- Avoid robotic, vague, generic, or blog-style wording.
+- Avoid filler advice. Be concrete and financially meaningful.
 
 ENUM RULES (VERY IMPORTANT)
 The field "analysis_confidence" MUST be EXACTLY one of:
@@ -138,55 +140,100 @@ Do not omit any required field, even when evidence is weak.
 If evidence is weak, fill the field with cautious, patient-friendly language rather than leaving it empty.
 
 ANALYSIS GOALS
-1. Identify potential billing issues such as:
-- duplicate charges
+
+1. Identify the most financially meaningful billing issues such as:
 - unusually high service charges
-- missing or pending insurance adjustments
+- room and board charges that appear excessive
+- operating room, anesthesia, recovery room, imaging, or diagnostic charges that appear unusually high
+- duplicate-looking charges
 - facility fees
 - unclear or suspicious line items
+- missing or pending insurance adjustments
 - out-of-network anomalies
-- room and board charges that appear significant
-- operating room or procedure-related charges that appear unusually high
+- charges that deserve itemized review
 
-2. Identify negotiation opportunities such as:
+2. Identify realistic negotiation opportunities such as:
 - prompt-pay discounts
 - financial assistance programs
 - charity care eligibility
 - itemized bill review
-- payment plan negotiation
 - billing department review
 - self-pay discount opportunities when appropriate
+- discount review based on large hospital charges
+- payment plan negotiation only as a secondary opportunity, not the primary savings driver
 
 3. Estimate a realistic savings range.
-- Be conservative but practical.
+Savings rules:
+- Be conservative but financially meaningful.
 - Never assume the full bill can be removed.
 - If negotiation is plausibly worthwhile, do NOT return 0 for estimated_savings_min.
 - Only use 0 as estimated_savings_min if there is truly no meaningful evidence of possible savings.
 - Typical hospital negotiations often fall in the 5% to 25% range depending on the issue.
 - Use evidence from the bill when possible.
+- Prefer concrete savings ranges tied to visible charges rather than vague generic estimates.
 
 4. Create a step-by-step negotiation strategy.
-5. Generate a short phone call script.
-6. Generate a professional email template.
+
+5. Generate a strong phone call script that sounds prepared, confident, and specific.
+
+6. Generate a professional email template that references the actual bill.
+
 7. Provide practical negotiation tips patients often overlook.
+
 8. Provide a realistic expected outcome.
 
 SPECIFICITY RULES
 - Refer to concrete bill categories, charge types, service types, or fee patterns when visible.
 - Use evidence_from_bill to mention the relevant visible clue from the bill text.
-- Do not fabricate CPT codes, insurer actions, or billing facts not present in the text.
+- When possible, mention actual dollar amounts from the bill.
+- Prefer statements like:
+  "The operating room charge of $65,333.50 appears high enough to justify review"
+  instead of:
+  "Operating room charges may be high"
+- Do not fabricate CPT codes, insurer actions, regional benchmark databases, or billing facts not present in the text.
+- Do not invent industry averages unless clearly framed as general context and only when helpful.
+- Make the report feel customized to this specific bill.
+
+FINANCIAL IMPACT RULES
+- The report should emphasize financial leverage.
+- Focus on the largest visible charges first.
+- The strongest issues should usually be tied to the largest charges on the bill.
+- If the bill contains very large categories like room and board, operating room, MRI, recovery room, or major diagnostics, prioritize those in potential_issues.
+- If insurance payments are shown as $0.00, describe this as something worth reviewing, not a confirmed error.
 
 INSURANCE RULE
 - If no insurance payment is visible, do NOT assume this is an error.
-- Describe it as possible pending insurance processing or something worth reviewing.
+- Describe it as possible pending insurance processing, missing adjustment visibility, or something worth reviewing before payment.
 
 SUMMARY RULES
 The summary should:
 - sound like advice from a billing negotiation expert
-- explain why the bill deserves review
+- clearly explain why this specific bill deserves review
+- mention the most meaningful visible charges or patterns
 - reassure the patient that negotiation is common
-- avoid sounding robotic
-- mention the most meaningful reasons this bill may be negotiable
+- avoid sounding generic or robotic
+- feel financially important
+
+CALL SCRIPT RULES
+The call script must:
+- sound ready to use
+- reference the bill in a specific and credible way
+- ask for an itemized review and clarification before payment
+- sound calm, assertive, and prepared
+- avoid weak filler language
+
+EMAIL TEMPLATE RULES
+The email template must:
+- sound professional
+- reference the bill in a specific way
+- ask for itemized review, clarification, and available discounts
+- be realistic and ready to send with minimal edits
+
+QUALITY RULES
+- Bad issue title example: "Billing issue found"
+- Good issue title example: "High room and board charges may deserve review"
+- Bad description example: "There may be problems with this bill"
+- Good description example: "The bill includes a semi-private room and board charge large enough to justify a closer billing review before payment"
 
 RETURN JSON IN THIS EXACT STRUCTURE
 {
@@ -241,6 +288,8 @@ OUTPUT CONSISTENCY RULES
 - Include only keys defined in the structure above.
 - Do not include null.
 - Do not include trailing commentary.
+- Prefer 2 to 4 strong potential_issues over many weak ones.
+- Prefer 2 to 4 strong negotiation_opportunities over many generic ones.
 
 Bill text:
 """${billText}"""
